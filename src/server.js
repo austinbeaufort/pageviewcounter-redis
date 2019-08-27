@@ -72,7 +72,7 @@ async function createPersonObject(userObj) {
         weight,
         user
     }
-    await hmset(name, 'lastname', lastname, 'age', age, 'weight', weight, 'user', user);
+    await hmset(name,'age', age, 'weight', weight);
     return personObj;
 }
 
@@ -89,11 +89,14 @@ async function gatherFunctions(body, response) {
     let name = body.name;
     let existsInRedis = await checkRedisForName(name);
 
+    // CHECK REDIS CACHE, IF FOUND, RETURN USER
     if(existsInRedis) {
+        console.log('retrieved from redis..')
         let redisObj = await getRedisData(name);
         let personObj = createUserObject(redisObj, name);
         return personObj;
     } else {
+        // GET FROM INFLUX, ADD TO REDIS CACHE, RETURN USER
         let influxObj = await getInfluxData(name);
         let userObj = influxObj[0];
         if(userObj === undefined) {
@@ -110,12 +113,6 @@ function main(request, response) {
     return gatherFunctions(request.body, response)
                 .then(reply => response.send(reply));
 }
-
-
-    
-app.get('/countcheck', (request, response) => {
-    response.send('checking page counts on this page');
-})
 
 
 
